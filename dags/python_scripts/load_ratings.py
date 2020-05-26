@@ -1,4 +1,3 @@
-# import boto3
 import sys
 import os
 from pyspark import SparkConf, SparkContext
@@ -17,17 +16,15 @@ def create_spark_session(aws_key, aws_secret_key):
 
     spark = SparkSession \
         .builder \
+        .config("spark.executor.heartbeatInterval", "40s") \
         .getOrCreate()
-        # .config("spark.hadoop.fs.s3a.multipart.size", "104857600") \
-        # .config("spark.jars.packages", "com.amazonaws:aws-java-sdk:1.7.4") \
-        # .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.5") \
     
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.impl",
                                                       "org.apache.hadoop.fs.s3a.S3AFileSystem")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", aws_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", aws_secret_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.multipart.size", "104857600")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100000000")
     return spark
 
 if __name__ == "__main__":
@@ -49,7 +46,7 @@ if __name__ == "__main__":
     ])
 
     ratings_df = spark.read.csv("s3a://{}/{}/ratings.csv".format(s3_bucket, s3_key), 
-                                schema=ratings_schema)
+                                schema=ratings_schema).limit(100)
     ratings_df = ratings_df.withColumn("userMovieId", monotonically_increasing_id())
     ratings_df = ratings_df.select(col("userMovieId").alias("user_movie_id"),
                                    col("userId").alias("user_id"),
@@ -61,9 +58,7 @@ if __name__ == "__main__":
               .option("dbtable", "movies.ratings") \
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
-              .option("driver", "org.postgresql.Driver") \
+              .option("driver", "com.amazon.redshift.jdbc42.Driver") \
               .mode("append") \
               .save()
-            #   .option("aws_region", "us-west-2") \
-            #   .option("tempdir", "s3a://{}/{}".format(s3_bucket, 'tmp')) \
     

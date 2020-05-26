@@ -78,12 +78,8 @@ COPY script/entrypoint.sh /entrypoint.sh
 
 COPY config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
 
-# Add dependency for hadoop-aws
-ADD https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar $SPARK_HOME/jars
-# Add hadoop-aws to access Amazon S3
-ADD https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.7.5/hadoop-aws-2.7.5.jar $SPARK_HOME/jars
-# Add postgres JDBC jar driver
-ADD https://jdbc.postgresql.org/download/postgresql-42.2.12.jar $SPARK_HOME/jars
+# Add jar file for Redshift JDBC driver
+ADD https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/1.2.43.1067/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar $SPARK_HOME/jars
 
 RUN chown -R airflow: ${AIRFLOW_USER_HOME}
 RUN chmod -R o+rx $SPARK_HOME/jars

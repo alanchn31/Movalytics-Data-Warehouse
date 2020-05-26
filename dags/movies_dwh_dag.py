@@ -35,12 +35,8 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                                 dag=dag)
     downloadData = BashOperator(task_id='download-data',
                                 bash_command= 'spark-submit ' + \
-                                # '--packages org.postgresql:postgresql:42.2.10 ' + \
-                                '--driver-class-path $SPARK_HOME/jars/postgresql-42.2.12.jar ' + \
-                                '--jars $SPARK_HOME/jars/postgresql-42.2.12.jar ' + \
-                                # '$SPARK_HOME/jars/aws-java-sdk-1.7.4.jar,' + \
-                                # '$SPARK_HOME/jars/hadoop-aws-2.7.5.jar ' + \
-                                # '--jars $SPARK_HOME/jars/RedshiftJDBC41-no-awssdk-1.2.43.1067.jar,' + \
+                                '--driver-class-path $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                '--jars $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
                                 os.getcwd() + '/dags/python_scripts/' + \
                                 'load_ratings.py ' + s3_bucket + ' ' + s3_key + \
                                 ' ' + aws_key + ' ' + aws_secret_key + ' ' + redshift_conn_string + \
