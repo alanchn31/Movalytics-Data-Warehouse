@@ -1,11 +1,10 @@
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.postgres_operator import PostgresOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import os
-
-# docker run -d -p 8080:8080 -v //c/Users/Work-pc/Desktop/capstone/dags://usr/local/airflow/dags  alanchn31-capstone-udacity-de-nd
 
 movie_s3_config = Variable.get("movie_s3_config", deserialize_json=True)
 redshift_conn_string = Variable.get("redshift_conn_string")
@@ -29,17 +28,39 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                       Data Warehouse with Airflow',
          schedule_interval='@daily') as dag:
     
-    start_operator = DummyOperator(task_id='begin_execution', dag=dag)
-    printVersion = BashOperator(task_id='check-version',
-                                bash_command='ls $SPARK_HOME/jars',
-                                dag=dag)
-    downloadData = BashOperator(task_id='download-data',
-                                bash_command= 'spark-submit ' + \
-                                '--driver-class-path $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
-                                '--jars $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
-                                os.getcwd() + '/dags/python_scripts/' + \
-                                'load_ratings.py ' + s3_bucket + ' ' + s3_key + \
-                                ' ' + aws_key + ' ' + aws_secret_key + ' ' + redshift_conn_string + \
-                                ' ' + db_user + ' ' + db_pass + ' ' + '--conf "fs.s3a.multipart.size=104857600"' #spark.hadoop.fs.s3a
-                                , dag=dag)
-    start_operator >> printVersion >> downloadData
+    start_operator = DummyOperator(task_id='begin-execution', dag=dag)
+    create_tables = PostgresOperator(task_id='create-tables', postgres_conn_id="redshift",
+                                    sql="sql_scripts/create_tables.sql")
+    
+    load_staging_ratings = BashOperator(task_id='load-staging-ratings',
+                                        bash_command= 'spark-submit ' + \
+                                        '--driver-class-path $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        '--jars $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        os.getcwd() + '/dags/python_scripts/' + \
+                                        'load_staging_ratings.py ' + s3_bucket + ' ' + s3_key + \
+                                        ' ' + aws_key + ' ' + aws_secret_key + ' ' + redshift_conn_string + \
+                                        ' ' + db_user + ' ' + db_pass + ' ' + \
+                                        '--conf "fs.s3a.multipart.size=104857600"' 
+                                        , dag=dag)
+    
+    load_staging_movies = BashOperator(task_id='load-staging-movies',
+                                        bash_command= 'spark-submit ' + \
+                                        '--driver-class-path $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        '--jars $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        os.getcwd() + '/dags/python_scripts/' + \
+                                        'load_staging_movies.py ' + s3_bucket + ' ' + s3_key + \
+                                        ' ' + aws_key + ' ' + aws_secret_key + ' ' + redshift_conn_string + \
+                                        ' ' + db_user + ' ' + db_pass + ' ' + \
+                                        '--conf "fs.s3a.multipart.size=104857600"' 
+                                        , dag=dag)
+    
+    upsert_ratings = PostgresOperator(task_id='upsert-ratings-table', postgres_conn_id="redshift",
+                                    sql="sql_scripts/upsert_ratings.sql")
+
+    upsert_movies = PostgresOperator(task_id='upsert-movies-table', postgres_conn_id="redshift",
+                                     sql="sql_scripts/upsert_movies.sql")
+
+    start_operator >> create_tables
+    create_tables >> [load_staging_ratings, load_staging_movies]
+    load_staging_ratings >> upsert_ratings
+    load_staging_movies >> upsert_movies
