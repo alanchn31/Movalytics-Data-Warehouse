@@ -1,10 +1,13 @@
 import sys
 import os
+from datetime import datetime
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl,
-                               IntegerType as Int, TimestampType as Timestamp)
-from pyspark.sql.functions import monotonically_increasing_id, col
+                               IntegerType as Int, TimestampType as Timestamp, 
+                               DateType as Date)
+from pyspark.sql.functions import (monotonically_increasing_id, col, year, 
+                                   month, dayofmonth, udf)
 
 
 def create_spark_session(aws_key, aws_secret_key):
@@ -24,8 +27,12 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", aws_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", aws_secret_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100000000")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
     return spark
+
+
+def format_datetime(ts):
+    return datetime.fromtimestamp(ts/1000.0) 
 
 if __name__ == "__main__":
     s3_bucket = sys.argv[1]
@@ -45,20 +52,34 @@ if __name__ == "__main__":
         Fld("timestamp", Timestamp())
     ])
 
-    ratings_df = spark.read.csv("s3a://{}/{}/ratings.csv".format(s3_bucket, s3_key), 
-                                schema=ratings_schema).limit(100)
-    ratings_df = ratings_df.withColumn("userMovieId", monotonically_increasing_id())
-    ratings_df = ratings_df.select(col("userMovieId").alias("user_movie_id"),
-                                   col("userId").alias("user_id"),
-                                   col("movieId").alias("movie_id"),
-                                   col("rating").alias("movie_rating"))
+    ratings_df = spark.read.option("header", "true") \
+                           .csv("s3a://{}/{}/ratings.csv".format(s3_bucket, s3_key), 
+                                schema=ratings_schema).limit(10000)
+
+    get_datetime = udf(lambda x: format_datetime(int(x)), Date())
+    ratings_df = ratings_df.withColumn("datetime", get_datetime(ratings_df.timestamp))
+    # ratings_df = ratings_df.filter(ratings_df("datetime") == lit(execution_date))
+    # ratings_df = ratings_df.withColumn("year", year(ratings_df.datetime)) \
+    #                        .withColumn("month", month(ratings_df.datetime)) \
+    #                        .withColumn("day", dayofmonth(ratings_df.datetime))
+
+    ratings_df = ratings_df.select(
+        col("userId").alias("user_id"),
+        col("movieId").alias("movie_id"),
+        col("rating").alias("movie_rating")
+    )
+    
+    output_path = "s3a://{}/{}/{}".format(s3_bucket, "data", "ratings")
+
+    # ratings_df.write.partitionBy("year", "month", "day").parquet(output_path)
+
     ratings_df.write \
               .format("jdbc")  \
               .option("url", redshift_conn_string) \
-              .option("dbtable", "movies.ratings") \
+              .option("dbtable", "movies.stage_ratings") \
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-              .mode("append") \
+              .mode("error") \
               .save()
     
