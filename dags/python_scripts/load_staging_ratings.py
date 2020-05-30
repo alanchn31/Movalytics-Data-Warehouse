@@ -28,6 +28,7 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", aws_secret_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.maximum", "5000")
     return spark
 
 
@@ -54,10 +55,12 @@ if __name__ == "__main__":
 
     ratings_df = spark.read.option("header", "true") \
                            .csv("s3a://{}/{}/ratings.csv".format(s3_bucket, s3_key), 
-                                schema=ratings_schema).limit(10000)
+                                schema=ratings_schema)
 
-    get_datetime = udf(lambda x: format_datetime(int(x)), Date())
-    ratings_df = ratings_df.withColumn("datetime", get_datetime(ratings_df.timestamp))
+    ratings_df = ratings_df.na.drop()
+
+    # get_datetime = udf(lambda x: format_datetime(int(x)), Date())
+    # ratings_df = ratings_df.withColumn("datetime", get_datetime(ratings_df.timestamp))
     # ratings_df = ratings_df.filter(ratings_df("datetime") == lit(execution_date))
     # ratings_df = ratings_df.withColumn("year", year(ratings_df.datetime)) \
     #                        .withColumn("month", month(ratings_df.datetime)) \
@@ -66,7 +69,7 @@ if __name__ == "__main__":
     ratings_df = ratings_df.select(
         col("userId").alias("user_id"),
         col("movieId").alias("movie_id"),
-        col("rating").alias("movie_rating")
+        col("rating")
     )
     
     output_path = "s3a://{}/{}/{}".format(s3_bucket, "data", "ratings")
@@ -80,6 +83,6 @@ if __name__ == "__main__":
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-              .mode("error") \
+              .mode("overwrite") \
               .save()
     
