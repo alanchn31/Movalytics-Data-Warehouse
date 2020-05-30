@@ -8,8 +8,7 @@ from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl
                                BooleanType as Boolean, FloatType as Float,
                                LongType as Long, StringType as String,
                                ArrayType as Array)
-from pyspark.sql.functions import (monotonically_increasing_id, col, year, 
-                                   month, dayofmonth, weekofyear, quarter,
+from pyspark.sql.functions import (col, year, month, dayofmonth, weekofyear, quarter,
                                    explode, from_json)
 
 
@@ -81,7 +80,6 @@ if __name__ == "__main__":
                            .csv("s3a://{}/{}/movies_metadata.csv".format(s3_bucket, s3_key), 
                                 schema=movies_schema)
 
-    movies_df = movies_df.drop.na()
     genre_schema = Array(StructType([Fld("id", Int()), Fld("name", String())])
                     )
 
@@ -126,7 +124,7 @@ if __name__ == "__main__":
          .option("user", sys.argv[6]) \
          .option("password", sys.argv[7]) \
          .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-         .mode("overwrite") \
+         .mode("append") \
          .save()
     
     movie_genre.write \
@@ -136,7 +134,7 @@ if __name__ == "__main__":
                .option("user", sys.argv[6]) \
                .option("password", sys.argv[7]) \
                .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-               .mode("overwrite") \
+               .mode("append") \
                .save()
     
     movies_df.write \
@@ -146,7 +144,7 @@ if __name__ == "__main__":
              .option("user", sys.argv[6]) \
              .option("password", sys.argv[7]) \
              .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-             .mode("overwrite") \
+             .mode("append") \
              .save()
     
     date_table.write \
@@ -156,5 +154,5 @@ if __name__ == "__main__":
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-              .mode("overwrite") \
+              .mode("append") \
               .save()

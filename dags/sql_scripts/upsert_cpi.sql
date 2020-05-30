@@ -1,9 +1,3 @@
-COPY {{ params.schema }}.{{ params.table }}
-FROM s3://{{ params.s3_bucket }}/{{ params.s3_key }}/{{ params.file_name }}
-with credentials
-aws_access_key_id={{ params.access_key }};aws_secret_access_key={{ params.secret_key }}
-CSV;
-
 -- Upsert cpi table
 UPDATE movies.cpi 
 SET consumer_price_index = sc.consumer_price_index

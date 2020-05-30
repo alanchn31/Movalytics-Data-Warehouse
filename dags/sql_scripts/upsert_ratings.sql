@@ -1,7 +1,7 @@
 
 -- Upsert ratings table
 UPDATE movies.ratings 
-SET rating = ms.rating 
+SET movie_rating = ms.rating 
 FROM movies.stage_ratings ms 
 WHERE movies.ratings.user_id = ms.user_id AND movies.ratings.movie_id = ms.movie_id; 
 
