@@ -3,11 +3,9 @@ import os
 from datetime import datetime
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
-from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl,
-                               IntegerType as Int, TimestampType as Timestamp, 
-                               DateType as Date)
-from pyspark.sql.functions import (monotonically_increasing_id, col, year, 
-                                   month, dayofmonth, udf)
+from pyspark.sql.types import (StructType, StructField as Fld,
+                               DateType as Date, FloatType as Float)
+from pyspark.sql.functions import col
 
 
 def create_spark_session(aws_key, aws_secret_key):
@@ -32,9 +30,6 @@ def create_spark_session(aws_key, aws_secret_key):
     return spark
 
 
-def format_datetime(ts):
-    return datetime.fromtimestamp(ts/1000.0) 
-
 if __name__ == "__main__":
     s3_bucket = sys.argv[1]
     s3_key = sys.argv[2]
@@ -46,30 +41,26 @@ if __name__ == "__main__":
 
     spark = create_spark_session(aws_key, aws_secret_key)
 
-    ratings_schema = StructType([
-        Fld("userId", Int()),
-        Fld("movieId", Int()),
-        Fld("rating", Dbl()),
-        Fld("timestamp", Timestamp())
+    cpi_schema = StructType([
+        Fld("DATE", Date()),
+        Fld("CUSR0000SS62031", Float())
     ])
 
-    ratings_df = spark.read.option("header", "true") \
-                           .csv("s3a://{}/{}/ratings.csv".format(s3_bucket, s3_key), 
-                                schema=ratings_schema)
+    cpi_df = spark.read.option("header", "true") \
+                           .csv("s3a://{}/{}/consumer_price_index.csv".format(s3_bucket, s3_key), 
+                            schema=cpi_schema)
 
-    ratings_df = ratings_df.select(
-        col("userId").alias("user_id"),
-        col("movieId").alias("movie_id"),
-        col("rating")
-    )
+    cpi_df = cpi_df.select(col("DATE").alias("date_cd"),
+                           col("CUSR0000SS62031").alias("consumer_price_index"))
+    
+    cpi_df = cpi_df.filter(cpi_df.date_cd.isNotNull())
 
-    ratings_df.write \
+    cpi_df.write \
               .format("jdbc")  \
               .option("url", redshift_conn_string) \
-              .option("dbtable", "movies.stage_ratings") \
+              .option("dbtable", "movies.stage_cpi") \
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
               .mode("append") \
               .save()
-    

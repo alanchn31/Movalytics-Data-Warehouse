@@ -19,9 +19,9 @@ class DataQualityOperator(BaseOperator):
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
         for table in self.table_names:
             # Check that entries are being copied to table
-            records = redshift.get_records(f"SELECT COUNT(*) FROM {table}")
+            records = redshift.get_records("SELECT COUNT(*) FROM {}".format(table))
             if len(records) < 1 or len(records[0]) < 1:
-                raise ValueError(f"Data quality check failed. {table} returned no results")
+                raise ValueError("Data quality check failed. {} returned no results".format(table))
 
         # Check that there are no rows with null ids
         dq_checks=[
@@ -41,5 +41,4 @@ class DataQualityOperator(BaseOperator):
         for check in dq_checks:
              records = redshift.get_records(check['check_sql'])
              if records[0] != check['expected_result']:
-                raise ValueError(f"Data quality check failed. {check['table']} \
-                                   contains null in id column")
+                raise ValueError("Data quality check failed. {} contains null in id column".format(check['table']))

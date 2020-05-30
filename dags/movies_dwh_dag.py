@@ -54,6 +54,17 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                                         ' ' + db_user + ' ' + db_pass + ' ' + \
                                         '--conf "fs.s3a.multipart.size=104857600"' 
                                         , dag=dag)
+
+    load_staging_cpi = BashOperator(task_id='load-staging-cpi',
+                                        bash_command= 'spark-submit ' + \
+                                        '--driver-class-path $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        '--jars $SPARK_HOME/jars/RedshiftJDBC42-no-awssdk-1.2.43.1067.jar ' + \
+                                        os.getcwd() + '/dags/python_scripts/' + \
+                                        'load_staging_cpi.py ' + s3_bucket + ' ' + s3_key + \
+                                        ' ' + aws_key + ' ' + aws_secret_key + ' ' + redshift_conn_string + \
+                                        ' ' + db_user + ' ' + db_pass + ' ' + \
+                                        '--conf "fs.s3a.multipart.size=104857600"' 
+                                        , dag=dag)
     
     upsert_ratings = PostgresOperator(task_id='upsert-ratings-table', postgres_conn_id="redshift",
                                     sql="sql_scripts/upsert_ratings.sql", dag=dag)
@@ -68,7 +79,7 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                                     'table': 'stage_cpi',
                                     's3_bucket': s3_bucket,
                                     's3_key': s3_key,
-                                    'file_name': 'consumer_price_index.csv'
+                                    'file_name': 'consumer_price_index.csv',
                                     'access_key':  aws_key,
                                     'secret_key': aws_secret_key
                                   }, dag=dag)
@@ -84,7 +95,8 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                                             dag=dag)
 
     start_operator >> create_tables
-    create_tables >> [load_staging_ratings, load_staging_movies, upsert_cpi]
+    create_tables >> [load_staging_ratings, load_staging_movies, load_staging_cpi]
     load_staging_ratings >> upsert_ratings
     load_staging_movies >> upsert_movies
+    load_staging_cpi >> upsert_cpi
     [upsert_cpi, upsert_ratings, upsert_movies] >> check_data_quality
