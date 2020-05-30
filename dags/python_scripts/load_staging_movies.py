@@ -6,7 +6,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl,
                                IntegerType as Int, DateType as Date,
                                BooleanType as Boolean, FloatType as Float,
-                               LongType as Long)
+                               LongType as Long, StringType as String,
+                               ArrayType as Array)
 from pyspark.sql.functions import (monotonically_increasing_id, col, year, 
                                    month, dayofmonth, weekofyear, quarter,
                                    explode, from_json)
@@ -30,6 +31,7 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", aws_secret_key)
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.maximum", "5000")
     return spark
 
 
@@ -79,7 +81,7 @@ if __name__ == "__main__":
                            .csv("s3a://{}/{}/movies_metadata.csv".format(s3_bucket, s3_key), 
                                 schema=movies_schema)
 
-    movies_df = movies_df.where(col("adult").isNotNull())
+    movies_df = movies_df.drop.na()
     genre_schema = Array(StructType([Fld("id", Int()), Fld("name", String())])
                     )
 
@@ -89,7 +91,8 @@ if __name__ == "__main__":
     
     movie_genre = movies_df.select("id", "genre_id").distinct()
     
-    genre = movies_df.select("genre_id", "genre").distinct()
+    genre = movies_df.select("genre_id", "genre_name").distinct()
+    genre = genre.na.drop()
 
     movies_df = movies_df.select(
         col("id").alias("movie_id"),
@@ -123,7 +126,7 @@ if __name__ == "__main__":
          .option("user", sys.argv[6]) \
          .option("password", sys.argv[7]) \
          .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-         .mode("error") \
+         .mode("overwrite") \
          .save()
     
     movie_genre.write \
@@ -133,7 +136,7 @@ if __name__ == "__main__":
                .option("user", sys.argv[6]) \
                .option("password", sys.argv[7]) \
                .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-               .mode("error") \
+               .mode("overwrite") \
                .save()
     
     movies_df.write \
@@ -143,7 +146,7 @@ if __name__ == "__main__":
              .option("user", sys.argv[6]) \
              .option("password", sys.argv[7]) \
              .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-             .mode("error") \
+             .mode("overwrite") \
              .save()
     
     date_table.write \
@@ -153,5 +156,5 @@ if __name__ == "__main__":
               .option("user", sys.argv[6]) \
               .option("password", sys.argv[7]) \
               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-              .mode("error") \
+              .mode("overwrite") \
               .save()

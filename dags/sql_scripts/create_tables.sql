@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS movies.ratings (
 
 CREATE TABLE IF NOT EXISTS movies.stage_movies (
     movie_id INT NOT NULL,
-    is_adult BOOLEAN NOT NULL,
+    is_adult VARCHAR(5) NOT NULL,
     budget BIGINT NOT NULL,
     original_language CHAR(2) NOT NULL,
     title VARCHAR(30) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS movies.stage_movies (
 
 CREATE TABLE IF NOT EXISTS movies.movies (
     movie_id INT NOT NULL,
-    is_adult BOOLEAN NOT NULL,
+    is_adult VARCHAR(5) NOT NULL,
     budget BIGINT NOT NULL,
     original_language CHAR(2) NOT NULL,
     title VARCHAR(30) NOT NULL,
@@ -61,14 +61,14 @@ diststyle key distkey(movie_id);
 
 CREATE TABLE IF NOT EXISTS movies.stage_genre (
     genre_id INT NOT NULL,
-    genre_name VARCHAR(20),
+    genre_name VARCHAR(120),
     primary key (genre_id)
 )
 diststyle all;
 
 CREATE TABLE IF NOT EXISTS movies.genre (
     genre_id INT NOT NULL,
-    genre_name VARCHAR(20),
+    genre_name VARCHAR(120),
     primary key (genre_id)
 )
 diststyle all;
@@ -92,5 +92,17 @@ CREATE TABLE IF NOT EXISTS movies.date (
     quarter INT,
     year INT,
     primary key (release_date)
+)
+diststyle all;
+
+CREATE TABLE IF NOT EXISTS movies.stage_cpi (
+    date_cd DATE NOT NULL SORTKEY,
+    consumer_price_index FLOAT
+)
+diststyle all;
+
+CREATE TABLE IF NOT EXISTS movies.cpi (
+    date_cd DATE NOT NULL SORTKEY,
+    consumer_price_index FLOAT
 )
 diststyle all;

@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
+from airflow.operators.movies_plugin import DataQualityOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import os
@@ -30,7 +31,7 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
     
     start_operator = DummyOperator(task_id='begin-execution', dag=dag)
     create_tables = PostgresOperator(task_id='create-tables', postgres_conn_id="redshift",
-                                    sql="sql_scripts/create_tables.sql")
+                                    sql="sql_scripts/create_tables.sql", dag=dag)
     
     load_staging_ratings = BashOperator(task_id='load-staging-ratings',
                                         bash_command= 'spark-submit ' + \
@@ -55,12 +56,35 @@ with DAG(dag_id='sparkify_movie_dwh_dag', default_args=default_args,
                                         , dag=dag)
     
     upsert_ratings = PostgresOperator(task_id='upsert-ratings-table', postgres_conn_id="redshift",
-                                    sql="sql_scripts/upsert_ratings.sql")
+                                    sql="sql_scripts/upsert_ratings.sql", dag=dag)
 
     upsert_movies = PostgresOperator(task_id='upsert-movies-table', postgres_conn_id="redshift",
-                                     sql="sql_scripts/upsert_movies.sql")
+                                     sql="sql_scripts/upsert_movies.sql", dag=dag)
+
+    upsert_cpi = PostgresOperator(task_id='upsert-staging-cpi', postgres_conn_id="redshift",
+                                  sql='sql_scripts/upsert_cpi.sql',
+                                  params={
+                                    'schema': 'movies',
+                                    'table': 'stage_cpi',
+                                    's3_bucket': s3_bucket,
+                                    's3_key': s3_key,
+                                    'file_name': 'consumer_price_index.csv'
+                                    'access_key':  aws_key,
+                                    'secret_key': aws_secret_key
+                                  }, dag=dag)
+    
+    check_data_quality = DataQualityOperator(task_id='run_data_quality_checks',
+                                            redshift_conn_id="redshift",
+                                            table_names=["movies.movies",
+                                                         "movies.ratings",
+                                                         "movies.movie_genre",
+                                                         "movies.genre",
+                                                         "movies.date",
+                                                         "movies.cpi"],
+                                            dag=dag)
 
     start_operator >> create_tables
-    create_tables >> [load_staging_ratings, load_staging_movies]
+    create_tables >> [load_staging_ratings, load_staging_movies, upsert_cpi]
     load_staging_ratings >> upsert_ratings
     load_staging_movies >> upsert_movies
+    [upsert_cpi, upsert_ratings, upsert_movies] >> check_data_quality
