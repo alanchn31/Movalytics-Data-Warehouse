@@ -63,14 +63,14 @@ diststyle key distkey(movie_id);
 
 CREATE TABLE IF NOT EXISTS movies.stage_genre (
     genre_id INT NOT NULL,
-    genre_name VARCHAR(120),
+    genre_name VARCHAR(300),
     primary key (genre_id)
 )
 diststyle all;
 
 CREATE TABLE IF NOT EXISTS movies.genre (
     genre_id INT NOT NULL,
-    genre_name VARCHAR(120),
+    genre_name VARCHAR(300),
     primary key (genre_id)
 )
 diststyle all;

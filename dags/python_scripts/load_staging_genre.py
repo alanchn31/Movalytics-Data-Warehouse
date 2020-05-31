@@ -88,6 +88,7 @@ if __name__ == "__main__":
                          .withColumn("genre_name", col("genres.name")) \
     
     movie_genre = movies_df.select("id", "genre_id").distinct()
+    movie_genre = movie_genre.select(col("id").alias("movie_id"), col("genre_id"))
     
     genre = movies_df.select("genre_id", "genre_name").distinct()
     genre = genre.na.drop()
