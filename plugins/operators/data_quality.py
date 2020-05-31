@@ -40,5 +40,7 @@ class DataQualityOperator(BaseOperator):
         ]
         for check in dq_checks:
              records = redshift.get_records(check['check_sql'])
-             if records[0] != check['expected_result']:
+             if records[0][0] != check['expected_result']:
+                print("Number of rows with null ids: ", records[0][0])
+                print("Expected number of rows with null ids: ", check['expected_result'])
                 raise ValueError("Data quality check failed. {} contains null in id column".format(check['table']))
