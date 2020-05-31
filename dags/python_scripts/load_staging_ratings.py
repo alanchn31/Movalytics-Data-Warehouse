@@ -6,8 +6,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl,
                                IntegerType as Int, TimestampType as Timestamp, 
                                DateType as Date)
-from pyspark.sql.functions import (monotonically_increasing_id, col, year, 
-                                   month, dayofmonth, udf)
+from pyspark.sql.functions import col
 
 
 def create_spark_session(aws_key, aws_secret_key):
@@ -30,10 +29,6 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.maximum", "5000")
     return spark
-
-
-def format_datetime(ts):
-    return datetime.fromtimestamp(ts/1000.0) 
 
 if __name__ == "__main__":
     s3_bucket = sys.argv[1]

@@ -8,7 +8,8 @@ from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl
                                BooleanType as Boolean, FloatType as Float,
                                LongType as Long, StringType as String,
                                ArrayType as Array)
-from pyspark.sql.functions import col
+from pyspark.sql.functions import (col, year, month, dayofmonth, weekofyear, quarter,
+                                   explode, from_json)
 
 
 def create_spark_session(aws_key, aws_secret_key):
@@ -30,6 +31,7 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.maximum", "5000")
+    spark.set("spark.sql.shuffle.partitions", 4)
     return spark
 
 
@@ -60,8 +62,8 @@ if __name__ == "__main__":
         Fld("overview", String()),
         Fld("popularity", Dbl()),
         Fld("poster_path", String()),
-        Fld("production_companies", String()),
-        Fld("production_countries",  String()),
+        Fld("production_company", String()),
+        Fld("production_country",  String()),
         Fld("release_date", Date()),
         Fld("revenue", Long()),
         Fld("runtime", Float()),
@@ -79,28 +81,34 @@ if __name__ == "__main__":
                            .csv("s3a://{}/{}/movies_metadata.csv".format(s3_bucket, s3_key), 
                                 schema=movies_schema)
 
+    genre_schema = Array(StructType([Fld("id", Int()), Fld("name", String())]))
 
-    movies_df = movies_df.select(
-        col("id").alias("movie_id"),
-        col("adult").alias("is_adult"),
-        col("budget"),
-        col("original_language"),
-        col("title"),
-        col("popularity"),
-        col("release_date"),
-        col("revenue"),
-        col("vote_count"),
-        col("vote_average")
-    )
-
-    movies_df = movies_df.na.drop()
+    movies_df = movies_df.withColumn("genres", explode(from_json("genres", genre_schema))) \
+                         .withColumn("genre_id", col("genres.id")) \
+                         .withColumn("genre_name", col("genres.name")) \
     
-    movies_df.write \
-             .format("jdbc")  \
-             .option("url", redshift_conn_string) \
-             .option("dbtable", "movies.stage_movies") \
-             .option("user", sys.argv[6]) \
-             .option("password", sys.argv[7]) \
-             .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-             .mode("append") \
-             .save()
+    movie_genre = movies_df.select("id", "genre_id").distinct()
+    
+    genre = movies_df.select("genre_id", "genre_name").distinct()
+    genre = genre.na.drop()
+
+    # Load data into staging:
+    genre.write \
+         .format("jdbc")  \
+         .option("url", redshift_conn_string) \
+         .option("dbtable", "movies.stage_genre") \
+         .option("user", sys.argv[6]) \
+         .option("password", sys.argv[7]) \
+         .option("driver", "com.amazon.redshift.jdbc42.Driver") \
+         .mode("append") \
+         .save()
+    
+    movie_genre.write \
+               .format("jdbc")  \
+               .option("url", redshift_conn_string) \
+               .option("dbtable", "movies.stage_movie_genre") \
+               .option("user", sys.argv[6]) \
+               .option("password", sys.argv[7]) \
+               .option("driver", "com.amazon.redshift.jdbc42.Driver") \
+               .mode("append") \
+               .save()

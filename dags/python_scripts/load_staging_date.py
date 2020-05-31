@@ -8,7 +8,7 @@ from pyspark.sql.types import (StructType, StructField as Fld, DoubleType as Dbl
                                BooleanType as Boolean, FloatType as Float,
                                LongType as Long, StringType as String,
                                ArrayType as Array)
-from pyspark.sql.functions import col
+from pyspark.sql.functions import (col, year, month, dayofmonth, weekofyear, quarter)
 
 
 def create_spark_session(aws_key, aws_secret_key):
@@ -60,8 +60,8 @@ if __name__ == "__main__":
         Fld("overview", String()),
         Fld("popularity", Dbl()),
         Fld("poster_path", String()),
-        Fld("production_companies", String()),
-        Fld("production_countries",  String()),
+        Fld("production_company", String()),
+        Fld("production_country",  String()),
         Fld("release_date", Date()),
         Fld("revenue", Long()),
         Fld("runtime", Float()),
@@ -79,28 +79,24 @@ if __name__ == "__main__":
                            .csv("s3a://{}/{}/movies_metadata.csv".format(s3_bucket, s3_key), 
                                 schema=movies_schema)
 
-
-    movies_df = movies_df.select(
-        col("id").alias("movie_id"),
-        col("adult").alias("is_adult"),
-        col("budget"),
-        col("original_language"),
-        col("title"),
-        col("popularity"),
-        col("release_date"),
-        col("revenue"),
-        col("vote_count"),
-        col("vote_average")
-    )
-
     movies_df = movies_df.na.drop()
+
+    # extract columns to create time table
+    date_table = movies_df.select(
+                    col('release_date'),
+                    dayofmonth("release_date").alias('day'),
+                    weekofyear("release_date").alias('week'),
+                    month("release_date").alias('month'),
+                    quarter("release_date").alias('quarter'),
+                    year("release_date").alias('year')
+                 ).dropDuplicates()
     
-    movies_df.write \
-             .format("jdbc")  \
-             .option("url", redshift_conn_string) \
-             .option("dbtable", "movies.stage_movies") \
-             .option("user", sys.argv[6]) \
-             .option("password", sys.argv[7]) \
-             .option("driver", "com.amazon.redshift.jdbc42.Driver") \
-             .mode("append") \
-             .save()
+    date_table.write \
+              .format("jdbc")  \
+              .option("url", redshift_conn_string) \
+              .option("dbtable", "movies.stage_date") \
+              .option("user", sys.argv[6]) \
+              .option("password", sys.argv[7]) \
+              .option("driver", "com.amazon.redshift.jdbc42.Driver") \
+              .mode("append") \
+              .save()

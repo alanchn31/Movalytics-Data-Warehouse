@@ -1,3 +1,4 @@
+BEGIN;
 
 -- Upsert ratings table
 UPDATE movies.ratings 
@@ -11,4 +12,6 @@ SELECT ms.* FROM movies.stage_ratings ms LEFT JOIN movies.ratings
 ON ms.user_id = movies.ratings.user_id AND ms.movie_id = movies.ratings.movie_id
 WHERE movies.ratings.user_id IS NULL;
 
-DROP TABLE movies.stage_ratings;
+DROP TABLE IF EXISTS movies.stage_ratings;
+
+END;
