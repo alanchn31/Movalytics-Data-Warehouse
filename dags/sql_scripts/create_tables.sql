@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE SCHEMA IF NOT EXISTS movies;
 
 
@@ -22,7 +24,7 @@ CREATE TABLE IF NOT EXISTS movies.stage_movies (
     is_adult VARCHAR(5) NOT NULL,
     budget BIGINT NOT NULL,
     original_language CHAR(2) NOT NULL,
-    title VARCHAR(30) NOT NULL,
+    title VARCHAR(300) NOT NULL,
     popularity FLOAT,
     release_date DATE,
     revenue BIGINT NOT NULL SORTKEY,
@@ -36,7 +38,7 @@ CREATE TABLE IF NOT EXISTS movies.movies (
     is_adult VARCHAR(5) NOT NULL,
     budget BIGINT NOT NULL,
     original_language CHAR(2) NOT NULL,
-    title VARCHAR(30) NOT NULL,
+    title VARCHAR(300) NOT NULL,
     popularity FLOAT,
     release_date DATE,
     revenue BIGINT NOT NULL SORTKEY,
@@ -106,3 +108,5 @@ CREATE TABLE IF NOT EXISTS movies.cpi (
     consumer_price_index FLOAT
 )
 diststyle all;
+
+END;
