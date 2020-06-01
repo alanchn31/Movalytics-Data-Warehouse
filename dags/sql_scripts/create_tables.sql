@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS movies.stage_movies (
     original_language CHAR(2) NOT NULL,
     title VARCHAR(300) NOT NULL,
     popularity FLOAT,
-    release_date DATE,
+    release_date DATE NOT NULL,
     revenue BIGINT NOT NULL SORTKEY,
     vote_count INT,
     vote_average FLOAT,
