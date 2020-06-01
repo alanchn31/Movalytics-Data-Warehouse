@@ -31,7 +31,7 @@ def create_spark_session(aws_key, aws_secret_key):
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "s3.amazonaws.com")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.timeout", "100")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.maximum", "5000")
-    spark.set("spark.sql.shuffle.partitions", 4)
+    spark.conf.set("spark.sql.shuffle.partitions", 4)
     return spark
 
 
