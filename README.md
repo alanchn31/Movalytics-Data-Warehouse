@@ -17,8 +17,14 @@ The technical architecture for this project is as show below:
 ![Architecture](documentation/README_images/architecture.PNG)
 
 1. Data Extraction is done using Kaggle API and using GET request to St Louis Fred's CPI dataset
-Set up an EC2 instance with python and pip installed. Then, run `pip install kaggle`. To download the movielens dataset, run `kaggle datasets download -d "rounakbanik/the-movies-dataset"`.  
-For St Louis Fred's Consumer Price Index dataset, run `wget https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=CUSR0000SS62031&scale=left&cosd=1999-01-01&coed=2020-04-01&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Monthly&fam=avg&fgst=lin&fgsnd=2009-06-01&line_index=1&transformation=lin&vintage_date=2020-05-31&revision_date=2020-05-31&nd=1999-01-01`
+Set up an EC2 instance with python and pip installed. Then, run `pip install kaggle`. To download the movielens dataset, run 
+```bash
+kaggle datasets download -d "rounakbanik/the-movies-dataset"
+```  
+For St Louis Fred's Consumer Price Index dataset, run 
+```bash
+wget https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=CUSR0000SS62031&scale=left&cosd=1999-01-01&coed=2020-04-01&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Monthly&fam=avg&fgst=lin&fgsnd=2009-06-01&line_index=1&transformation=lin&vintage_date=2020-05-31&revision_date=2020-05-31&nd=1999-01-01
+```
 
 2. Next, copy the files downloaded from the EC2 instance to S3. Make sure that it has the aws-cli installed. Run `aws configure` and then `aws s3 cp {FILE} s3://{S3_BUCKET}/{S3_FOLDER}/` to transfer the files to S3. Note that if the situation changes such that this becomes a daily job, we can write a shell script containing these commands, and add the command to run this shell script in our Airflow data pipeline
 
@@ -84,7 +90,7 @@ The process is as follows:
 * Replace the webserver image in docker-compose-LocalExecutor.yml to the image name of the Docker image you have built/pulled.
     ```yml
      webserver:
-        image: alanchn31/alanchn31-capstone-udacity-de-nd
+        image: alanchn31/alanchn31-capstone-udacity-de-nd:1
     ```
 
 * Run `docker-compose -f docker-compose-LocalExecutor.yml up -d `. Your airflow server should be initiated and will be up and running. Visit `https://{your ec2 ip address}:8080` to view Airflow UI
