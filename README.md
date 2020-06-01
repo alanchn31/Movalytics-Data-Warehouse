@@ -78,7 +78,7 @@ The process is as follows:
 * Alternatively, pull the docker image I have pushed to Dockerhub:
     ```bash 
     # Build the docker image  
-    docker pull alanchn31/alanchn31-capstone-udacity-de-nd
+    docker pull alanchn31/alanchn31-capstone-udacity-de-nd:1
     ```
 
 * Replace the webserver image in docker-compose-LocalExecutor.yml to the image name of the Docker image you have built/pulled.
