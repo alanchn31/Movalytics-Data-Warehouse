@@ -57,13 +57,13 @@ The process is as follows:
 ---
 * The assumption that I have made is that the data volume will not increase subtantially and the pipeline is only required to run once
 
-1. What if data is increased by 100x?
+1. <ins> What if data is increased by 100x? </ins>
 * We can run a increase the number of worker nodes on the spark cluster, to improve performance of compute. Furthermore, airflow schedules can be utilized to pull only a subset of the data at a time, to reduce volume of data handled at any one time.
   
-2. What if data pipeline needs to be run by 7am daily?
+2. <ins> What if data pipeline needs to be run by 7am daily? </ins>
 * We can turn on the EC2 machine and run the pipeline before 7am daily. Currently, the schedule of the airflow pipeline is set to ingest only once. We can set it to a daily schedule, to ingest new data coming in daily. We should add a new node to our Airflow DAG, to download data using API/get request and transfer to S3. In addition, to handle heavy workloads when backdating, CeleryExecutor should be used to run processes in a distributed fashion, ensuring there is no single point of failure. Furthermore, We can make use of Airflow's SLA feature, to send alerts should pipeline not have succeeded before a certain time (for eg, 6:00am)
 
-3. What if the database needs to be accessed by 100+ users?
+3. <ins> What if the database needs to be accessed by 100+ users? </ins>
 * Redshift should not have an issue handling many users, but we should be careful to scale up/scale out with more nodes whenever necessary. To provide efficiency to queries, we can seek to understand common queries users have, so we can tweak our data model. Aggregated data tables can be provided beforehand to reduce query times. We can also assign sort keys according to users querying needs for each table.
 
 ## Development
@@ -97,7 +97,7 @@ There are 4 variables to be defined:
         'aws_key': {AWS_KEY},
         'aws_secret_key: {AWS_SECRET_KEY},
         's3_bucket': {AWS_S3_BUCKET},
-        's3_key': {AWS_s3_KEY} 
+        's3_key': {AWS_S3_KEY} 
     }
     ```  
     * The AWS_S3_BUCKET is the S3 bucket with S3_KEY (folder) containing the csv files:  
