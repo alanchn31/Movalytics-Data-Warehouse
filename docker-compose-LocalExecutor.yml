@@ -12,7 +12,7 @@ services:
                 max-file: "3"
 
     webserver:
-        image: alanchn31-capstone-udacity-de-nd
+        image: alanchn31/alanchn31-capstone-udacity-de-nd:1
         restart: always
         depends_on:
             - postgres
