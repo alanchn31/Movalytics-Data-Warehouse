@@ -16,7 +16,7 @@ The technical architecture for this project is as show below:
   
 ![Architecture](documentation/README_images/architecture.PNG)
 
-1. Data Extraction is done using Kaggle API and using GET request to St Louis Fred's CPI dataset
+1. Data Extraction is done using Kaggle API and using GET request to St Louis Fred's CPI dataset.  
 Set up an EC2 instance with python and pip installed. Then, run `pip install kaggle`. To download the movielens dataset, run 
 ```bash
 kaggle datasets download -d "rounakbanik/the-movies-dataset"
