@@ -128,3 +128,10 @@ In addition, define the Hook to connect to Redshift:
     Port: Enter `5439`.
 
 After configuring, visit Airflow UI and enable DAG to start the data pipeline
+
+## Acknowledgements
+---
+Many thanks to:
+* Udacity - for providing the project template and points of consideration :clap:
+* Rounak Banik - for providing me with the dataset I extracted from Kaggle and used :clap:
+* St Louis Fred - for providing me with the consumer price index data :clap:
