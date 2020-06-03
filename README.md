@@ -1,4 +1,4 @@
-## MovieHut
+## FilmHut
 ---
 ![MovieHut](documentation/README_images/logo.PNG)  
 
