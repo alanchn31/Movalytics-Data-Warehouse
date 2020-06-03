@@ -98,7 +98,7 @@ The process is as follows:
 <ins>Add necessary connections and variables in Airflow UI</ins>  
 There are 4 variables to be defined:  
 1. `movie_s3_config`. It is defined as a json format as follows:
-    ```json
+    ```
     {
         'aws_key': {AWS_KEY},
         'aws_secret_key: {AWS_SECRET_KEY},
