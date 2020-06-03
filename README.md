@@ -1,6 +1,6 @@
-## FilmHut
+## Movalytics
 ---
-![MovieHut](documentation/README_images/logo.PNG)  
+![Movalytics](documentation/README_images/logo.PNG)  
 
 ## Project Description
 ---
