@@ -1,6 +1,6 @@
 ## Movalytics
 ---
-![Movalytics](documentation/README_images/logo.png)  
+![Movalytics](documentation/README_images/logo.PNG)  
 
 ## Project Description
 ---
